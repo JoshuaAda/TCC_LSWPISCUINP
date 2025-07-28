@@ -1,0 +1,71 @@
+{
+    "name": "cloud_2_756",
+    "num_nodes": 4,
+    "num_leaves": 1,
+    "providers": {
+        "provider_0": {
+            "name": "aws",
+            "leave": true,
+            "estimated_latency": [
+                0.0,
+                2.2693387157306315,
+                8.175962211980373,
+                6.595437640539359
+            ],
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 4.108671362700638,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 4.108671362700638
+        },
+        "provider_1": {
+            "name": "aws",
+            "estimated_latency": [
+                2.2693387157306315,
+                0.0,
+                5.649876077928079,
+                8.404658046607873
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 0.8754201158414058,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 0.8754201158414058
+        },
+        "provider_2": {
+            "name": "aws",
+            "estimated_latency": [
+                8.175962211980373,
+                5.649876077928079,
+                0.0,
+                6.974280987916094
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 2.1169065340914854,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 2.1169065340914854
+        },
+        "provider_3": {
+            "name": "aws",
+            "estimated_latency": [
+                6.595437640539359,
+                8.404658046607873,
+                6.974280987916094,
+                0.0
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 1.1635887470338604,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 1.1635887470338604
+        }
+    }
+}

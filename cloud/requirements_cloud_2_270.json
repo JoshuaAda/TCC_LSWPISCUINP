@@ -1,0 +1,87 @@
+{
+    "name": "cloud_2_270",
+    "num_nodes": 5,
+    "num_leaves": 1,
+    "providers": {
+        "provider_0": {
+            "name": "aws",
+            "leave": true,
+            "estimated_latency": [
+                0.0,
+                2.3530332233402333,
+                7.874281156871231,
+                1.7803133668806652,
+                3.568646215554766
+            ],
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 0.8987711719023789,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07
+        },
+        "provider_1": {
+            "name": "aws",
+            "estimated_latency": [
+                2.3530332233402333,
+                0.0,
+                8.689716949941644,
+                3.757236268328621,
+                5.388427362875646
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 0.7789982272561025,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07
+        },
+        "provider_2": {
+            "name": "aws",
+            "estimated_latency": [
+                7.874281156871231,
+                8.689716949941644,
+                0.0,
+                5.721522035305761,
+                5.078152831431313
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 0.7323461698043937,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07
+        },
+        "provider_3": {
+            "name": "aws",
+            "estimated_latency": [
+                1.7803133668806652,
+                3.757236268328621,
+                5.721522035305761,
+                0.0,
+                2.722331091896076
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 0.17290593134471222,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07
+        },
+        "provider_4": {
+            "name": "aws",
+            "estimated_latency": [
+                3.568646215554766,
+                5.388427362875646,
+                5.078152831431313,
+                2.722331091896076,
+                0.0
+            ],
+            "leave": false,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 1.0132626384536267,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07
+        }
+    }
+}

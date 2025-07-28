@@ -1,0 +1,80 @@
+{
+    "deployment_number": 5,
+    "num_functions": 5,
+    "num_requests": {},
+    "functions": {
+        "function_0": {
+            "name": "function_0",
+            "time": 0.6701349825633266,
+            "speedup": 0.866457516845669,
+            "ram": 0.9024900350894558,
+            "prob_request": 0.20380833957039582,
+            "data_send": 76.34065058594587,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_1": {
+            "name": "function_1",
+            "time": 0.3965519127235738,
+            "speedup": 0.8737520675875641,
+            "ram": 0.7213565945155741,
+            "prob_request": 0.6123435482234182,
+            "data_send": 7.869587922158539,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_2": {
+            "name": "function_2",
+            "time": 0.5796535010847098,
+            "speedup": 0.2025174088489845,
+            "ram": 0.3427593309834488,
+            "prob_request": 0.6170205886866946,
+            "data_send": 95.98908602254316,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_3": {
+            "name": "function_3",
+            "time": 0.5954126215521836,
+            "speedup": 0.8309314378575909,
+            "ram": 0.4970578166580203,
+            "prob_request": 0.9364952573372847,
+            "data_send": 64.45359253186932,
+            "data_dependencies": {
+                "provider_0": 1878.4422482893758
+            },
+            "function_set": {}
+        },
+        "function_4": {
+            "name": "function_4",
+            "time": 0.48719635482268353,
+            "speedup": 0.8290212571315243,
+            "ram": 0.5280801051049934,
+            "prob_request": 0.20530839195047085,
+            "data_send": 86.61460578988587,
+            "data_dependencies": {},
+            "function_set": {}
+        }
+    },
+    "paths": {
+        "num_paths": 2,
+        "0": [
+            0,
+            3,
+            1,
+            4
+        ],
+        "1": [
+            0,
+            2,
+            4
+        ]
+    },
+    "input_data": 99.47741418736817,
+    "input_functions": [
+        "function_0"
+    ],
+    "output_functions": [
+        "function_4"
+    ]
+}

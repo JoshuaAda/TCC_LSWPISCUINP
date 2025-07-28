@@ -1,0 +1,89 @@
+{
+    "deployment_number": 8,
+    "num_functions": 6,
+    "num_requests": {},
+    "functions": {
+        "function_0": {
+            "name": "function_0",
+            "time": 0.567272627538237,
+            "speedup": 0.15730234263174078,
+            "ram": 0.4470739768670412,
+            "prob_request": 0.9783332150390154,
+            "data_send": 39.0080249459555,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_1": {
+            "name": "function_1",
+            "time": 0.7128371019868304,
+            "speedup": 0.16562019634298542,
+            "ram": 0.5294257690704725,
+            "prob_request": 0.8728971613163101,
+            "data_send": 51.03659035685751,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_2": {
+            "name": "function_2",
+            "time": 0.8413772952973815,
+            "speedup": 0.6775417420198389,
+            "ram": 0.6755570276319196,
+            "prob_request": 0.5679268739880516,
+            "data_send": 42.341328937719915,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_3": {
+            "name": "function_3",
+            "time": 0.14353069855246797,
+            "speedup": 0.1897961664772757,
+            "ram": 0.8136204224265966,
+            "prob_request": 0.5085191971397939,
+            "data_send": 21.33854759087469,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_4": {
+            "name": "function_4",
+            "time": 0.11643004566961862,
+            "speedup": 0.9290256310665833,
+            "ram": 0.37841383440091936,
+            "prob_request": 0.5164010923290656,
+            "data_send": 4.46237816059843,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_5": {
+            "name": "function_5",
+            "time": 0.498102482613642,
+            "speedup": 0.2919943085151892,
+            "ram": 0.6306182678551708,
+            "prob_request": 0.6389489554199997,
+            "data_send": 78.34536171719746,
+            "data_dependencies": {},
+            "function_set": {}
+        }
+    },
+    "paths": {
+        "num_paths": 2,
+        "0": [
+            0,
+            1,
+            2,
+            5
+        ],
+        "1": [
+            0,
+            3,
+            4,
+            5
+        ]
+    },
+    "input_data": 63.175559381139614,
+    "input_functions": [
+        "function_0"
+    ],
+    "output_functions": [
+        "function_5"
+    ]
+}

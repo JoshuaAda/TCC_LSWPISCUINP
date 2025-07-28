@@ -1,0 +1,52 @@
+{
+    "name": "cloud_0_0",
+    "num_nodes": 3,
+    "num_leaves": 2,
+    "providers": {
+        "provider_0": {
+            "name": "aws",
+            "leave": false,
+            "estimated_latency": [
+                0.0,
+                0.020715121180774343,
+                0.4744927964463126
+            ],
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": Infinity,
+            "pricing_RAM": 5,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": Infinity
+        },
+        "provider_1": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                0.020715121180774343,
+                0.0,
+                0.930324739709788
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 8995.647726668345,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 8995.647726668345
+        },
+        "provider_2": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                0.4744927964463126,
+                0.930324739709788,
+                0.0
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 4394.630662197995,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 4393.15341152498
+        }
+    }
+}

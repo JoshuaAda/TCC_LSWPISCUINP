@@ -1,0 +1,67 @@
+{
+    "deployment_number": 3,
+    "num_functions": 4,
+    "num_requests": {},
+    "functions": {
+        "function_0": {
+            "name": "function_0",
+            "time": 0.5560481901246732,
+            "speedup": 0.6239885806141093,
+            "ram": 0.686789422435653,
+            "prob_request": 0.5704060749536359,
+            "data_send": 28.807223142814028,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_1": {
+            "name": "function_1",
+            "time": 0.353092572536831,
+            "speedup": 0.6581477351344418,
+            "ram": 0.48114758297489624,
+            "prob_request": 0.5658898725754744,
+            "data_send": 78.33260677633812,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_2": {
+            "name": "function_2",
+            "time": 0.5362308046411809,
+            "speedup": 0.2933535945458039,
+            "ram": 0.9340491084866412,
+            "prob_request": 0.13848384714993373,
+            "data_send": 80.35630660256622,
+            "data_dependencies": {},
+            "function_set": {}
+        },
+        "function_3": {
+            "name": "function_3",
+            "time": 0.3128420507492,
+            "speedup": 0.5144447497680106,
+            "ram": 0.9131310997175197,
+            "prob_request": 0.8728705636063926,
+            "data_send": 42.67417709063526,
+            "data_dependencies": {},
+            "function_set": {}
+        }
+    },
+    "paths": {
+        "num_paths": 2,
+        "0": [
+            0,
+            1,
+            3
+        ],
+        "1": [
+            0,
+            2,
+            3
+        ]
+    },
+    "input_data": 84.55921756317667,
+    "input_functions": [
+        "function_0"
+    ],
+    "output_functions": [
+        "function_3"
+    ]
+}

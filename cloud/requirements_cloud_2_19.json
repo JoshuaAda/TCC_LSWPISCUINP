@@ -1,0 +1,115 @@
+{
+    "name": "cloud_2_19",
+    "num_nodes": 6,
+    "num_leaves": 6,
+    "providers": {
+        "provider_0": {
+            "name": "tinyfaas",
+            "leave": true,
+            "estimated_latency": [
+                0.0,
+                8.13028943830704,
+                2.380701232466527,
+                6.8897238834819685,
+                7.580159705714569,
+                5.56901204689215
+            ],
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 28.253342868218787,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 28.253342868218787
+        },
+        "provider_1": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                8.13028943830704,
+                0.0,
+                4.266466880633249,
+                6.233289525110263,
+                4.807175913585897,
+                1.8290507396643934
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 10.0195055607929,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 10.0195055607929
+        },
+        "provider_2": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                2.380701232466527,
+                4.266466880633249,
+                0.0,
+                5.230429137794467,
+                5.678977028297198,
+                5.126003353653143
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 37.95442008089875,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 37.95442008089875
+        },
+        "provider_3": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                6.8897238834819685,
+                6.233289525110263,
+                5.230429137794467,
+                0.0,
+                0.5017992540151346,
+                1.7852740020244549
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 13.513494084847038,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 13.513494084847038
+        },
+        "provider_4": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                7.580159705714569,
+                4.807175913585897,
+                5.678977028297198,
+                0.5017992540151346,
+                0.0,
+                1.1944032539056098
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 20.681281953128835,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 20.681281953128835
+        },
+        "provider_5": {
+            "name": "tinyfaas",
+            "estimated_latency": [
+                5.56901204689215,
+                1.8290507396643934,
+                5.126003353653143,
+                1.7852740020244549,
+                1.1944032539056098,
+                0.0
+            ],
+            "leave": true,
+            "pricing_Storage_Transfer": 0,
+            "max_RAM_curr": 0.10816020110257539,
+            "pricing_RAM": 0.01667,
+            "pricing_data_sent": 0.01,
+            "pricing_StartRequest": 4e-07,
+            "max_ram_curr": 0.10816020110257539
+        }
+    }
+}
