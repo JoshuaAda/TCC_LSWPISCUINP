@@ -1,9 +1,10 @@
 {
   "num_levels": 2,
-  "num_workflows": 100,
+  "num_workflows": 1,
   "seed": 42,
   "w_1": 1,
   "w_2": 1,
+  "w_3": 1,
   "provider_list":["aws","google","tinyfaas"] ,
   "provider_cost_list": {
     "aws": {
@@ -11,42 +12,51 @@
       "pricing_RAM": 0.01667,
       "pricing_data_sent": 0.01
     },
+    "google": {
+      "pricing_Storage_Transfer": 0.005,
+      "pricing_RAM": 0.02,
+      "pricing_data_sent": 0.00001
+    },
     "tinyfaas": {
       "pricing_Storage_Transfer": 0,
       "pricing_RAM": 0,
       "pricing_data_sent": 0
-    },
-    "google": {
-      "pricing_Storage_Transfer": 0.005,
-      "pricing_RAM": 0.05,
-      "pricing_data_sent": 0.005
     }
   },
-  "num_tiny_first": 2,
-  "comparison": false,
-  "comparison_gap": 0.01,
+  "provider_cost_deviation": {
+      "pricing_Storage_Transfer": 0.00,
+      "pricing_RAM": 0.0,
+      "pricing_data_sent": 0.00000},
+  "num_tiny_first": 3,
+  "comparison": true,
+  "heuristic": true,
+  "own_gap": 0,
+  "comparison_gap": 0.07,
   "config_random_workflows": {
-    "deploy_min": 2,
+    "deploy_min": 1,
     "deploy_max": 3,
     "func_min": 3,
     "func_max":10,
     "input_data_max": 100,
-    "time_min": 0.1,
-    "time_max":1.0,
-    "speedup_min": 0.99,
+    "time_min": 100,
+    "time_max":1000.0,
+    "speedup_min": 0.75,
     "speedup_max":1.0,
-    "ram_min": 0.1,
-    "ram_max":1.0,
-    "data_sent_min": 1,
-    "data_sent_max": 100,
+    "ram_min": 1,
+    "ram_max":100.0,
+    "data_sent_min": 100,
+    "data_sent_max": 1000.0,
     "data_dependencies_prob": 0.2,
-    "data_dependencies_max": 10000
+    "data_dependencies_max": 1000
 },
   "config_random_cloud":{
+    "speedup_min": 0.75,
+    "speedup_max":1.0,
+    "speedup_dev": 0,
     "lat_min": 0,
     "lat_max":1,
-    "nodes_min": 2,
-    "nodes_max":10,
+    "nodes_min": 10,
+    "nodes_max":11,
     "base_decrease": 10
 }
 }

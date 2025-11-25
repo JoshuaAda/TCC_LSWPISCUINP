@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 
 
-def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, Any], gap=0,w_1=1,w_2=1):
+def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, Any], gap=0,w_1=1,w_2=1,w_3=1,provider_name_list=[],provider_cost_list=[],heuristic=False):
     #deployment = deployment_cloud
     workflow_functions = list(deployment_workflow['functions'].keys())
     providers = list(deployment_cloud['providers'].keys())
@@ -52,7 +52,7 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
     for m in range(num_functions):
         for i in range(num_nodes):
             if deployment_cloud['providers'][f"provider_{i}"]['name']!="tinyfaas":
-                Speed[m,i]=deployment_workflow["functions"][f"function_{m}"]['speedup']
+                Speed[m,i]=deployment_workflow["functions"][f"function_{m}"]['speedup']#+deployment_cloud["providers"][f"provider_{i}"]['speedup']
     for r in range(len(deployment_cloud['providers'])):
         if deployment_cloud['providers'][f"provider_{r}"]['leave']:
             leave_nodes.append(r)
@@ -88,7 +88,8 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
                 #D[j,k]=prob_request[j]*data_send*pricing_data_sent
                 D_in[k]=deployment_workflow['input_data']*pricing_data_sent
             for m in range(num_nodes):
-                    if k!=m:
+
+                    if deployment_cloud['providers'][f"provider_{k}"]["name"]!=deployment_cloud['providers'][f"provider_{m}"]["name"]:
                         if deployment_cloud['providers'][f"provider_{k}"]["name"]!='tinyfaas':
                             pricing_data_sent = deployment_cloud['providers'][providers[k]][
                             'pricing_data_sent']
@@ -99,9 +100,10 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
                             D[j,k,m]=D[j,k,m]+data_send*pricing_data_sent #*prob_request[j]
             for key in data_dependencies.keys():
                 value = data_dependencies[key]
-                pricing_Storage_Transfer =  deployment_cloud['providers'][key][
-                    'pricing_Storage_Transfer']
-                if key!=  providers[k]:
+                #provider_name=provider_name_list[int(key[9:])]
+                pricing_Storage_Transfer =  provider_cost_list[key]["pricing_Storage_Transfer"]#deployment_cloud['providers'][key][
+                    #'pricing_Storage_Transfer']
+                if key!=  deployment_cloud["providers"][providers[k]]["name"]:
             #        D[j,k]=data_send
                     C[j,k]=C[j,k]+pricing_Storage_Transfer*value
             if deployment_cloud['providers'][f"provider_{k}"]["name"]=='tinyfaas':
@@ -109,7 +111,7 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
             else:
                 pricing_RAM =  deployment_cloud['providers'][ providers[k]]['pricing_RAM']
                 #pricing_StartRequest =  deployment_cloud['providers'][ providers[k]]['pricing_StartRequest']
-                C[j,k]+=pricing_RAM*ram[j]*Speed[j,k]*time[j]#prob_request[j]*#+pricing_StartRequest*requests
+                C[j,k]+=pricing_RAM*ram[j]*time[j]#Speed#prob_request[j]*#+pricing_StartRequest*requests
 
     for k in range( num_nodes):
         for m in range( num_nodes):
@@ -127,109 +129,135 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
     #w_1=1
     #w_2=1
     #w_3=1
-    P=model.addVars( num_functions* num_workflows, num_nodes,vtype=GRB.BINARY, name="P")
-    S = model.addVars(num_functions * num_workflows, num_nodes, vtype=GRB.CONTINUOUS, name="S")
-    H=model.addVars(num_leaves,num_workflows,vtype=GRB.BINARY, name="H")
-    T=model.addVars(num_workflows,lb=0, ub=float('inf'),vtype=GRB.CONTINUOUS, name="T")
-    obj=0
-    for n in range( num_workflows):
-        for k in range( num_leaves):
-            for m in range( num_functions):
-                for i in range(num_nodes):
-                    obj=obj+H[k,n]*(w_1*(P[m+n* num_functions,i]*C[m,i]+S[m+n* num_functions,i])+w_2*T[n])#S[m+n* num_functions,i]*D[m,i]
-                    #for m_s in range(num_functions):
-                        #for j in range(num_nodes):
-                            #obj=obj+H[k,n]*P[m+n*num_functions,i]*P[m_s+n*num_functions,j]*D[m,i]*a[m,m_s]
-    for n in range( num_workflows):
-        for k in range( num_leaves):
-            for i in range(num_nodes):
-                for m in m_start:
-                    obj=obj+H[k,n]*( P[n*num_functions+m,i]*w_1*D_in[i]+w_2*L[leave_nodes[k],i]*P[n*num_functions+m,i])# P[n*num_functions+m,i]*w_1*D_in[i]
-                for m in m_end:
-                    obj= obj+H[k,n]*(w_1*D[m,i,k]*P[n*num_functions+m, i]+w_2*L[leave_nodes[k], i] * P[n*num_functions+m, i])
-    model.setObjective(obj,GRB.MINIMIZE)
-    #T_path=np.zeros((num_workflows,num_paths))
-    for n in range( num_workflows):
-        for m in range( num_functions):
-            model.addConstr(quicksum(P[m+n* num_functions,i] for i in range( num_nodes))==1,"only one placed")
+    if heuristic:
+        P_list = []
+        # for model in  model_list:
 
-    if deployment_workflow["selection_list"]!={}:
-        if deployment_workflow["selection_list"] != [-1]:
-            for k in range(num_leaves-1):
-                for n in range(num_workflows):
-                    model.addConstr(H[k+1,n]==deployment_workflow["selection_list"][n])
-        model.addConstr(quicksum(H[0,n] for n in range(num_workflows))==num_workflows)
+        P = np.zeros((num_functions * num_workflows, num_nodes))
+        S = np.zeros((num_functions * num_workflows, num_nodes))
+        H = np.zeros((num_leaves, num_workflows))
+        T = np.zeros((num_workflows, 1))
+        for l in range(len(P)):
+            P[l,0]=1
+        for l in range(len(H)):
+            H[l,0]=1
+
     else:
-        for k in range(num_leaves):
-            model.addConstr(quicksum(H[k, n] for n in range(num_workflows)) == 1, "only one selected")
-    #for n in range( num_workflows):
-    #    model.addConstr(quicksum(H[k,n] for k in range( num_leaves))>=1,"place differently")
-    #for i in range( num_nodes):
-    #    model.addConstr(quicksum(quicksum(P[n*num_functions+m,i]*ram[m] for m in range(num_functions)) for n in range(num_workflows))<= ram_max[i] #*prob_request , "RAM_constraint")
-    for n in range(num_workflows):
-        for s in range(num_paths):
-            model.addConstr(T[n]>=quicksum(quicksum(quicksum(quicksum(P[n*num_functions+m,i]*P[n*num_functions+m_s,j]*L[i,j]*a[m,m_s]*b[s,m] for m_s in range(num_functions)) for j in range(num_nodes))+P[n*num_functions+m,i]*b[s,m]*Speed[m,i]*time[m] for m in range(num_functions)) for i in range(num_nodes)),'Time constraint')#quicksum(quicksum(P[n*num_functions+m,i]*P[n*num_functions+m_s,j]*L[i,j]*a[m,m_s] for m_s in range(num_functions)) for j in range(num_nodes))*b[s,m]+
+        P=model.addVars( num_functions* num_workflows, num_nodes,vtype=GRB.BINARY, name="P")
+        S = model.addVars(num_functions * num_workflows, num_nodes, vtype=GRB.CONTINUOUS, name="S")
+        H=model.addVars(num_leaves,num_workflows,vtype=GRB.BINARY, name="H")
+        T=model.addVars(num_workflows,lb=0, ub=float('inf'),vtype=GRB.CONTINUOUS, name="T")
+        M = model.addVars(num_nodes,num_workflows, vtype=GRB.CONTINUOUS, name="M")
+        obj=0
+        for n in range( num_workflows):
+            for k in range( num_leaves):
+                obj=obj+H[k,n]*w_2*T[n]
+                for m in range( num_functions):
+                    for i in range(num_nodes):
+                        obj=obj+H[k,n]*(w_1*(P[m+n* num_functions,i]*C[m,i]+S[m+n* num_functions,i]))#S[m+n* num_functions,i]*D[m,i]
+                        #for m_s in range(num_functions):
+                            #for j in range(num_nodes):
+                                #obj=obj+H[k,n]*P[m+n*num_functions,i]*P[m_s+n*num_functions,j]*D[m,i]*a[m,m_s]
+        for n in range( num_workflows):
+            for k in range( num_leaves):
+                for i in range(num_nodes):
+                    for m in m_start:
+                        obj=obj+H[k,n]*( P[n*num_functions+m,i]*w_1*D_in[i]+w_2*L[leave_nodes[k],i]*P[n*num_functions+m,i])# P[n*num_functions+m,i]*w_1*D_in[i]
+                    for m in m_end:
+                        obj= obj+H[k,n]*(w_1*D[m,i,k]*P[n*num_functions+m, i]+w_2*L[leave_nodes[k], i] * P[n*num_functions+m, i])
 
-    for n in range(num_workflows):
-        for m in range(num_functions):
+
+        for n in range(num_workflows):
             for i in range(num_nodes):
-                model.addConstr(S[n*num_functions+m,i]==quicksum(quicksum(
-                    P[n * num_functions + m, i] * P[n * num_functions + m_s, j] *
-                    a[m, m_s]*D[m,i,j] for m_s in
-                    range(num_functions)) for j in range(num_nodes)),'Adding aux variable')#
-    for m in range(num_functions):
-        func_set=deployment_workflow["functions"][f"function_{m}"]["function_set"]
-        for n in func_set:
-            model.addConstr(P[n*num_functions+m,0]==1,"Already placed workflow functions")
-    #if num>0:
-    #    model.addConstr(quicksum(P[j,num-1] for j in range( num_functions))==0,"node_0_constr")
-    model.setParam('OutputFlag', 1)
-    model.update()
-    P_list = []
-    # for model in  model_list:
+                model.addConstr(M[i,n] == quicksum(P[n*num_functions+k, i] for k in range(num_functions))**2, "Aux cons")
+                obj+=w_3*quicksum(H[r,n]*M[i,n] for r in range(num_leaves))
+        for n in range(num_workflows):
+            obj+=w_3*quicksum(H[k,n] for k in range(num_leaves))**2
+        model.setObjective(obj,GRB.MINIMIZE)
+        #T_path=np.zeros((num_workflows,num_paths))
+        for n in range( num_workflows):
+            for m in range( num_functions):
+                model.addConstr(quicksum(P[m+n* num_functions,i] for i in range( num_nodes))==1,"only one placed")
 
-    model.optimize()
-    P = np.zeros((num_functions * num_workflows, num_nodes))
-    S = np.zeros((num_functions * num_workflows, num_nodes))
-    H = np.zeros((num_leaves, num_workflows))
-    T = np.zeros((num_workflows, 1))
-    r = 0
-    s = 0
-    for index,v in enumerate(model.getVars()):
-        if index<num_functions*num_workflows*num_nodes:
-            P[s, r] = v.x
-            r = r + 1
-            if r == num_nodes:
-                s = s + 1
-                r = 0
-            if s == num_functions*num_workflows:
-                s=0
+        if deployment_workflow["selection_list"]!={}:
+            if deployment_workflow["selection_list"] != [-1]:
+                for k in range(num_leaves-1):
+                    for n in range(num_workflows):
+                        model.addConstr(H[k+1,n]==deployment_workflow["selection_list"][n])
+            model.addConstr(quicksum(H[0,n] for n in range(num_workflows))==num_workflows)
+        else:
+            for k in range(num_leaves):
+                model.addConstr(quicksum(H[k, n] for n in range(num_workflows)) == 1, "only one selected")
+        #for n in range( num_workflows):
+        #    model.addConstr(quicksum(H[k,n] for k in range( num_leaves))>=1,"place differently")
+        #for i in range( num_nodes):
+        #    model.addConstr(quicksum(quicksum(P[n*num_functions+m,i]*ram[m] for m in range(num_functions)) for n in range(num_workflows))<= ram_max[i] #*prob_request , "RAM_constraint")
+        for n in range(num_workflows):
+            for s in range(num_paths):
+                model.addConstr(T[n]>=quicksum(quicksum(quicksum(quicksum(P[n*num_functions+m,i]*P[n*num_functions+m_s,j]*L[i,j]*a[m,m_s]*b[s,m] for m_s in range(num_functions)) for j in range(num_nodes))+P[n*num_functions+m,i]*b[s,m]*Speed[m,i]*time[m] for m in range(num_functions)) for i in range(num_nodes)),'Time constraint')#=quicksum(quicksum(L[leave_nodes[k],i]*P[n*num_functions+m,i] for k in range(num_leaves)) for m in m_start)+quicksum(quicksum(L[leave_nodes[k],i]*P[n*num_functions+m,i] for k in range(num_leaves)) for m in m_end)#quicksum(quicksum(P[n*num_functions+m,i]*P[n*num_functions+m_s,j]*L[i,j]*a[m,m_s] for m_s in range(num_functions)) for j in range(num_nodes))*b[s,m]+
 
-        elif index<2*num_functions*num_workflows*num_nodes:
-            S[s, r] = v.x
-            r = r + 1
-            if r == num_nodes:
-                s = s + 1
-                r = 0
-            if s == num_functions*num_workflows:
-                s=0
-        elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows:
-            H[s, r] = v.x
-            r = r + 1
-            if r == num_workflows:
-                s = s + 1
-                r = 0
-            if s == num_leaves:
-                s=0
-        elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows+num_workflows:
-            T[s] = v.x
-            s = s + 1
+        for n in range(num_workflows):
+            for m in range(num_functions):
+                for i in range(num_nodes):
+                    model.addConstr(S[n*num_functions+m,i]==quicksum(quicksum(
+                        P[n * num_functions + m, i] * P[n * num_functions + m_s, j] *
+                        a[m, m_s]*D[m,i,j] for m_s in
+                        range(num_functions)) for j in range(num_nodes)),'Adding aux variable')#
+        for m in range(num_functions):
+            func_set=deployment_workflow["functions"][f"function_{m}"]["function_set"]
+            for n in func_set:
+                model.addConstr(P[n*num_functions+m,0]==1,"Already placed workflow functions")
+        #if num>0:
+        #    model.addConstr(quicksum(P[j,num-1] for j in range( num_functions))==0,"node_0_constr")
+        model.setParam('OutputFlag', 1)
+        model.update()
+        P_list = []
+        # for model in  model_list:
 
+        model.optimize()
+        P = np.zeros((num_functions * num_workflows, num_nodes))
+        S = np.zeros((num_functions * num_workflows, num_nodes))
+        H = np.zeros((num_leaves, num_workflows))
+        T = np.zeros((num_workflows, 1))
+        r = 0
+        s = 0
+        for index,v in enumerate(model.getVars()):
+            if index<num_functions*num_workflows*num_nodes:
+                P[s, r] = v.x
+                r = r + 1
+                if r == num_nodes:
+                    s = s + 1
+                    r = 0
+                if s == num_functions*num_workflows:
+                    s=0
+
+            elif index<2*num_functions*num_workflows*num_nodes:
+                S[s, r] = v.x
+                r = r + 1
+                if r == num_nodes:
+                    s = s + 1
+                    r = 0
+                if s == num_functions*num_workflows:
+                    s=0
+            elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows:
+                H[s, r] = v.x
+                r = r + 1
+                if r == num_workflows:
+                    s = s + 1
+                    r = 0
+                if s == num_leaves:
+                    s=0
+            elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows+num_workflows:
+                T[s] = v.x
+                s = s + 1
+        obj=model.getObjective()
     P_list.append(P)
+    #print(obj)
     print(P)
-    #print(S)
+    #print(T)
     print(H)
-    print(T)
+    #print(D_in)
+    #print(S)
     return model,P,H,L,T,C,D,D_in,time,a,b,Speed,S
 
 """

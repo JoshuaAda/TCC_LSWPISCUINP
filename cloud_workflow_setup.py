@@ -29,6 +29,7 @@ def update_requirements_config(requirements_workflow_config, P,H, current_node,c
                 num_workflows -= 1
             else:
                 n_list.append(n)
+        requirements_workflow_config["active_workflow_list"]=n_list
         if current_leave_k==-1:
             selection_list=[current_leave_k]
         else:
@@ -45,14 +46,14 @@ def update_requirements_config(requirements_workflow_config, P,H, current_node,c
         if requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"] != {}:
             key = \
             [key for key in requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"].keys()][0]
-            provider = np.random.randint(num_nodes)
+            #provider = np.random.randint(num_nodes)
             value = requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"][key]
-            requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"]={}
-            match = re.search(r'provider_(\d+)', key)
-            number = int(match.group(1))
-            if number==current_node:
-                requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"][
-                f"provider_{provider}"] = value
+            #requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"]={}
+            #match = re.search(r'provider_(\d+)', key)
+            #number = int(match.group(1))
+            #if number==current_node:
+            requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"][
+            key] = value#f"provider_{provider}"
     requirements_workflow_config["deployment_number"] = num_workflows
     return requirements_workflow_config
 
@@ -147,7 +148,7 @@ def generate_random_workflows(num_workflows,num_opts, config_random_workflows,pr
         for k in range(num_functions):
             p_list=[(data_dependencies_prob)/(len(provider_name)-1) for k in range(len(provider_name)-1)]+[1-data_dependencies_prob]
             value=np.random.choice(len(provider_name), 1, p=p_list)[0]
-            string = f"provider_{value}"
+            string = provider_name[value]#f"provider_{value}"
             if provider_name[value]=="tinyfaas":
                 config["functions"][f"function_{k}"] = {
                     "name": f"function_{k}",
@@ -185,10 +186,13 @@ def generate_random_workflows(num_workflows,num_opts, config_random_workflows,pr
     return workflow_name_list
 
 
-def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyfaas"],num_tiny_first=2,provider_cost_list=[],config_random_cloud=[],seed=42):
+def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyfaas"],num_tiny_first=2,provider_cost_list=[],provider_dev=[],config_random_cloud=[],seed=42):
     np.random.seed(42)
     if not os.path.exists(os.path.join("cloud",f"run_{num_run}")):
         os.mkdir(os.path.join("cloud",f"run_{num_run}"))
+    speedup_min=config_random_cloud["speedup_min"]
+    speedup_max=config_random_cloud["speedup_max"]
+    speedup_deviation=config_random_cloud["speedup_dev"]
     nodes_min=config_random_cloud["nodes_min"]
     nodes_max= config_random_cloud["nodes_max"]
     lat_min= config_random_cloud["lat_min"]
@@ -258,6 +262,7 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
         if provider == "tinyfaas":
             num_leaves_ges+=1
     latencies_list=[[]]
+    speedup_list=[]
     for k in range(num_levels):
 
         if k == 0:
@@ -282,6 +287,7 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
             # curr_node+=num_nodes
             cloud_name = f"requirements_cloud_{k}_{0}.json"
             path = os.path.join(f"cloud/run_{num_run}", cloud_name)
+            speedup_list.append([np.random.uniform(speedup_min, speedup_max) for k in range(num_nodes)])
             # var_prob=np.random.choice(0,1,p=[0.2])
             config = {
                 "name": f"cloud_{k}_{0}",
@@ -293,6 +299,7 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
                         "leave": leave_list[0][0],
                         "estimated_latency": list(L[0, :]),
                         "max_RAM_curr": np.inf,
+                        "speedup":speedup_list[-1][0],
                         "pricing_Storage_Transfer": provider_cost_list[provider_list[0][0]]["pricing_Storage_Transfer"],
                         "pricing_RAM": provider_cost_list[provider_list[0][0]]["pricing_RAM"],  # 2.5e-06,
                         "pricing_data_sent": provider_cost_list[provider_list[0][0]]["pricing_data_sent"],
@@ -315,6 +322,7 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
                         "estimated_latency": list(L[s + 1, :]),  # np.random.uniform(0.01, 0.1),
                         "leave": leave_list[0][s + 1],  # provider_name[var_prob] == "tinyfaas",
                         "max_RAM_curr": ram_list[0][s + 1],
+                        "speedup":speedup_list[-1][s+1],
                         "pricing_Storage_Transfer": provider_cost_list[provider_list[0][s+1]]["pricing_Storage_Transfer"],
                         "pricing_RAM": provider_cost_list[provider_list[0][s+1]]["pricing_RAM"],  # 2.5e-06,
                         "pricing_data_sent": provider_cost_list[provider_list[0][s+1]]["pricing_data_sent"],
@@ -330,11 +338,14 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
             name_list.append([])
             ram_list.append([])
             latencies_list.append([])
+            speedup_list.append([])
             curr_node_level = 0
             for m in range(sum(num_nodes_in_level[k - 1])):
                 num_leaves = num_leaves_in_level[k][m]
                 num_nodes = num_nodes_in_level[k][m]  # np.random.randint(3,10)
                 L = np.zeros((num_nodes, num_nodes))
+                for r in range(num_nodes):
+                    speedup_list[-1].append(speedup_list[-2][m]+np.random.uniform(-speedup_deviation,speedup_deviation))
                 rand_latencies = np.random.uniform(lat_min / (base_decrease ** (k)), lat_max / (base_decrease ** (k)),
                                                    (int(num_nodes * (num_nodes - 1) / 2), 1))
                 ind = 0
@@ -369,11 +380,11 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
                             "name": provider_list[k][curr_node_level],  # name,
                             "leave": leave_list[k][curr_node_level],
                             "estimated_latency": list(L[:, 0]),
-
+                            "speedup":speedup_list[-1][m],
                             "max_RAM_curr": ram[0],
-                            "pricing_Storage_Transfer": provider_cost_list[provider_list[k][curr_node_level]]["pricing_Storage_Transfer"],
-                            "pricing_RAM": provider_cost_list[provider_list[k][curr_node_level]]["pricing_RAM"],  # 2.5e-06,
-                            "pricing_data_sent": provider_cost_list[provider_list[k][curr_node_level]]["pricing_data_sent"],
+                            "pricing_Storage_Transfer": provider_cost_list[provider_list[k][curr_node_level]]["pricing_Storage_Transfer"]+np.random.uniform(-provider_dev["pricing_Storage_Transfer"],provider_dev["pricing_Storage_Transfer"]),
+                            "pricing_RAM": provider_cost_list[provider_list[k][curr_node_level]]["pricing_RAM"]+np.random.uniform(-provider_dev["pricing_RAM"],provider_dev["pricing_RAM"]),  # 2.5e-06,
+                            "pricing_data_sent": provider_cost_list[provider_list[k][curr_node_level]]["pricing_data_sent"]+np.random.uniform(-provider_dev["pricing_data_sent"],provider_dev["pricing_data_sent"]),
                         }
                     },
                 }
@@ -386,11 +397,12 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
                             "name": provider_list[k][curr_node_level],
                             "estimated_latency": list(L[:, s + 1]),
                             "leave": leave_list[k][curr_node_level],
+                            "speedup":speedup_list[-1][m],
                             # name == "tinyfaas" and s+1>=num_nodes-num_leaves,
                             "max_RAM_curr": ram[s + 1],
-                            "pricing_Storage_Transfer": provider_cost_list[provider_list[k][curr_node_level]]["pricing_Storage_Transfer"],
-                            "pricing_RAM": provider_cost_list[provider_list[k][curr_node_level]]["pricing_RAM"],  # 2.5e-06,
-                            "pricing_data_sent": provider_cost_list[provider_list[k][curr_node_level]]["pricing_data_sent"]
+                            "pricing_Storage_Transfer": provider_cost_list[provider_list[k][curr_node_level]]["pricing_Storage_Transfer"]+np.random.uniform(-provider_dev["pricing_Storage_Transfer"],provider_dev["pricing_Storage_Transfer"]),
+                            "pricing_RAM": provider_cost_list[provider_list[k][curr_node_level]]["pricing_RAM"]+np.random.uniform(-provider_dev["pricing_RAM"],provider_dev["pricing_RAM"]),  # 2.5e-06,
+                            "pricing_data_sent": provider_cost_list[provider_list[k][curr_node_level]]["pricing_data_sent"]+np.random.uniform(-provider_dev["pricing_data_sent"],provider_dev["pricing_data_sent"])
                         }
                     })
                     curr_node += 1
@@ -409,6 +421,7 @@ def generate_cloud(num_levels=2, num_run=0,provider_name=["aws","google", "tinyf
     cloud_general_config["predecessor_list"] = predecessor_list
     cloud_general_config["leave_list"] = leave_list
     cloud_general_config["ram_list"]=ram_list
+    cloud_general_config["speedup_list"] = speedup_list
     cloud_general_config["provider_list"] = provider_list
     cloud_general_config["latencies_list"] = latencies_list
     cloud_general_config["num_nodes_in_level"] = num_nodes_in_level
@@ -426,6 +439,7 @@ def generate_full_cloud(config,num_run,provider_cost_list,num_levels):
     full_config["num_leaves"] = config["num_leaves"]
     full_config["providers"]={}
     ram_list=config["ram_list"][-1]
+    speedup_list=config["speedup_list"][-1]
     leave_list=config["leave_list"][-1]
     provider_list=config["provider_list"][-1]
     num_nodes_in_level=config["num_nodes_in_level"]
@@ -439,8 +453,9 @@ def generate_full_cloud(config,num_run,provider_cost_list,num_levels):
             curr_k=0
         full_config["providers"][f"provider_{k}"]={}
         full_config["providers"][f"provider_{k}"]["name"]=provider_list[k]
-        full_config["providers"][f"provider_{k}"]["leave"] = leave_list[k]
+        full_config["providers"][f"provider_{k}"]["leave"] = (leave_list[k] and (provider_list[k]=="tinyfaas"))
         full_config["providers"][f"provider_{k}"]["max_RAM_curr"] = ram_list[k]
+        full_config["providers"][f"provider_{k}"]["speedup"] =  speedup_list[k]
         full_config["providers"][f"provider_{k}"]["pricing_Storage_Transfer"] = provider_cost_list[provider_list[k]]["pricing_Storage_Transfer"]
         full_config["providers"][f"provider_{k}"]["pricing_RAM"] = provider_cost_list[provider_list[k]]["pricing_RAM"]
         full_config["providers"][f"provider_{k}"]["pricing_data_sent"] = provider_cost_list[provider_list[k]]["pricing_data_sent"]

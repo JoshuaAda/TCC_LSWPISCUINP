@@ -18,16 +18,18 @@ if __name__ == "__main__":
     seed= parameter_general_config["seed"]
     w_1=parameter_general_config["w_1"]
     w_2=parameter_general_config["w_2"]
+    w_3=parameter_general_config["w_3"]
     num_levels=parameter_general_config["num_levels"]
     num_workflows=parameter_general_config["num_workflows"]
     provider_list=parameter_general_config["provider_list"]#["aws","tinyfaas"]
     num_tiny_first=parameter_general_config["num_tiny_first"]
     comparison=parameter_general_config["comparison"]
     provider_cost_list=parameter_general_config["provider_cost_list"]
+    provider_dev=parameter_general_config["provider_cost_deviation"]
     comparison_gap=parameter_general_config["comparison_gap"]
     config_random_workflows=parameter_general_config["config_random_workflows"]
     config_random_cloud=parameter_general_config["config_random_cloud"]
-    generate_cloud(num_levels,num_run=num_run,provider_name=provider_list,num_tiny_first=num_tiny_first,provider_cost_list=provider_cost_list,config_random_cloud=config_random_cloud,seed=seed)
+    generate_cloud(num_levels,num_run=num_run,provider_name=provider_list,provider_dev=provider_dev,num_tiny_first=num_tiny_first,provider_cost_list=provider_cost_list,config_random_cloud=config_random_cloud,seed=seed)
     general_config_path = f"cloud/run_{num_run}/general_config.json"
     with open(general_config_path, "r") as f:
         cloud_general_config = json.load(f)
@@ -78,7 +80,7 @@ if __name__ == "__main__":
                     requirements_workflow_config=update_requirements_config(requirements_workflow_config,np.array(solution['P']),np.array(solution['H']),ind,curr_leave_k,requirements_cloud_config["num_nodes"],seed=seed)#P_list[predecessor_list[k][s]]
                     with open(path_workflow, "w") as f:
                         json.dump(requirements_workflow_config, f, indent=4)
-                model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S=solve_opt(requirements_workflow_config,requirements_cloud_config,comparison_gap,w_1,w_2)
+                model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S=solve_opt(requirements_workflow_config,requirements_cloud_config,gap=0,w_1=w_1,w_2=w_2,w_3=w_3,provider_name_list=provider_list,provider_cost_list=provider_cost_list)
                 solution=dict()
                 solution['P']=P.tolist()
                 solution['H']=H.tolist()
@@ -102,8 +104,12 @@ if __name__ == "__main__":
                 with open(path_cloud, "w") as f:
                     json.dump(requirements_cloud_config, f, indent=4)
     t2=time.time()
+    overall_time = [t2 - t1]
     if comparison:
+        heuristic=parameter_general_config["heuristic"]
+
         generate_full_cloud(cloud_general_config,num_run,provider_cost_list,num_levels)
+        t1 = time.time()
         for s,workflow_name in enumerate(workflow_name_list):
             cloud_name = f"requirements_cloud_full.json"
             sol_name = f"opt_{s}"
@@ -116,7 +122,7 @@ if __name__ == "__main__":
             with open(path_workflow, "r") as f:  # requirements_workflow_0.json
                 requirements_workflow_config = json.load(f)
 
-            model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S = solve_opt(requirements_workflow_config, requirements_cloud_config,comparison_gap,w_1,w_2)
+            model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S = solve_opt(requirements_workflow_config, requirements_cloud_config,comparison_gap,w_1,w_2,w_3,provider_list,provider_cost_list,heuristic)
             solution = dict()
             solution['P'] = P.tolist()
             solution['H'] = H.tolist()
@@ -132,10 +138,12 @@ if __name__ == "__main__":
             solution['S'] = S.tolist()
             with open(path_solution, "w") as f:
                 json.dump(solution, f, indent=4)
-
-    overall_time=[t2-t1]
+        t2=time.time()
+        comparison_time=[t2-t1]
     result_dict["time_list"]=time_list
     result_dict["overall_time"]=overall_time
+    if comparison:
+        result_dict["comparison_time"] = comparison_time
     if not os.path.exists(os.path.join("results", f"run_{num_run}")):
         os.mkdir(os.path.join("results", f"run_{num_run}"))
     results_path = f"results/run_{num_run}/time.json"
