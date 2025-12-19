@@ -3,8 +3,8 @@
     "num_workflows": 10,
     "seed": 42,
     "w_1": 0.0,
-    "w_2": 1.0,
-    "w_3": 0,
+    "w_2": 0.0,
+    "w_3": 1.0,
     "provider_list": [
         "aws",
         "google",
@@ -19,7 +19,7 @@
         "google": {
             "pricing_Storage_Transfer": 0.005,
             "pricing_RAM": 0.02,
-            "pricing_data_sent": 1e-05
+            "pricing_data_sent": 0.001
         },
         "tinyfaas": {
             "pricing_Storage_Transfer": 0,
@@ -34,14 +34,14 @@
     },
     "num_tiny_first": 3,
     "comparison": false,
-    "heuristic": true,
-    "own_gap": 0,
-    "comparison_gap": 0.07,
+    "heuristic": false,
+    "comparison_gap": 0.01,
+    "own_gap": 0.0,
     "config_random_workflows": {
         "deploy_min": 1,
         "deploy_max": 3,
         "func_min": 3,
-        "func_max": 10,
+        "func_max": 6,
         "input_data_max": 100,
         "time_min": 100,
         "time_max": 1000.0,
@@ -55,13 +55,13 @@
         "data_dependencies_max": 1000
     },
     "config_random_cloud": {
-        "speedup_min": 0.75,
-        "speedup_max": 1.0,
+        "speedup_min": 0.4,
+        "speedup_max": 0.5,
         "speedup_dev": 0,
         "lat_min": 0,
-        "lat_max": 1,
-        "nodes_min": 2,
-        "nodes_max": 3,
+        "lat_max": 10,
+        "nodes_min": 10,
+        "nodes_max": 11,
         "base_decrease": 10
     }
 }

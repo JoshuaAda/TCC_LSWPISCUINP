@@ -21,6 +21,7 @@ def update_requirements_config(requirements_workflow_config, P,H, current_node,c
     num_functions = requirements_workflow_config["num_functions"]
     num_workflows = requirements_workflow_config["deployment_number"]
     n_list = []
+    selection_list=[]
     if len(P) == 0:
         num_workflows = 0
     else:
@@ -29,11 +30,14 @@ def update_requirements_config(requirements_workflow_config, P,H, current_node,c
                 num_workflows -= 1
             else:
                 n_list.append(n)
+        for n in range(num_workflows):
+            if sum(H[:,n_list[n]])>0:
+                selection_list.append(n)
         requirements_workflow_config["active_workflow_list"]=n_list
-        if current_leave_k==-1:
-            selection_list=[current_leave_k]
-        else:
-            selection_list=H[current_leave_k,:].tolist()
+        #if current_leave_k==-1:
+        #    selection_list=[current_leave_k]
+        #else:
+        #    selection_list=H[current_leave_k,:].tolist()
         requirements_workflow_config["selection_list"]=selection_list
         for m in range(num_functions):
             liste = []
@@ -55,6 +59,7 @@ def update_requirements_config(requirements_workflow_config, P,H, current_node,c
             requirements_workflow_config["functions"][f"function_{m}"]["data_dependencies"][
             key] = value#f"provider_{provider}"
     requirements_workflow_config["deployment_number"] = num_workflows
+
     return requirements_workflow_config
 
 

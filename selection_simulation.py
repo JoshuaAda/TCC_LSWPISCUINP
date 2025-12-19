@@ -118,6 +118,7 @@ if __name__ == "__main__":
                 num_deployment=workflow_config["deployment_number"]
                 workflow_overall=np.zeros((num_deployment))
                 num_nodes_all=sum(num_nodes_in_level[-1])
+                invocations=np.zeros(num_nodes_all)
                 placement_overall=0#np.zeros((num_nodes_all))
                 for k in range(num_leaves):
 
@@ -237,6 +238,7 @@ if __name__ == "__main__":
                                                         k_curr=get_leaf(selected_place,opt_num)
                                                         placement_func[m,k_curr]=1
                                                         T_paths[s]+=(T_func+L_func[m])
+                                                        invocations[k_curr]+=1
                                                         #print(L_func[m])
                                                 prev_selected_place = selected_place
                                         pred_k_list,lat_upward_list,pos_list=upward_trajectory(k_curr)
@@ -276,13 +278,13 @@ if __name__ == "__main__":
                         #money_cost += S[num_functions-1 + selected_workflow * num_functions] [selected_place]
                         time_cost_all+=time_cost
                         money_cost_all+=money_cost
-                select_cost=np.sum(workflow_overall**2)+placement_overall##+np.sum(placement_overall**2)#num_prob=1
-                print(select_cost)
+                select_cost=np.sum(workflow_overall**2)+np.sum(invocations**2)#+placement_overall##+np.sum(placement_overall**2)#num_prob=1
+                #print(select_cost)
                 select_cost_all+=select_cost
 
         overall_cost = w_1 * money_cost_all+ w_2 * time_cost_all+w_3*select_cost_all
-        print(select_cost_all)
-        #print(overall_cost)
+        #print(select_cost_all)
+        print(overall_cost)
         results_path = f"results/run_{num_run}/results.json"
         if not os.path.exists(os.path.join("results",f"run_{num_run}")):
                 os.mkdir(os.path.join("results",f"run_{num_run}"))
@@ -327,10 +329,11 @@ if __name__ == "__main__":
                         b = placement_config['b']
                         a = placement_config['a']
                         select_cost=0
-                        for k in range(num_leaves):
-                                for n in range(num_deployment):
-                                        for i in range(num_nodes):
-                                                select_cost += H[k][n]*sum([P[num_functions*n+k][i] for k in range(num_functions)]) ** 2
+                        invocations=np.zeros((num_nodes))
+                        #for k in range(num_leaves):
+                        #        for m in range(num_deployment):
+                                        #for i in range(num_nodes):
+                                         #       select_cost += (H[k][n]*sum([P[num_functions*n+m][i] for m in range(num_functions)])) ** 2
                         for n in range(num_deployment):
                                 select_cost += sum([H[k][n] for k in range(num_leaves)]) ** 2
                                 print(select_cost)
@@ -387,13 +390,13 @@ if __name__ == "__main__":
                                                 time = workflow_config['functions'][f"function_{m}"][
                                                         'time']
                                                 T_func = speedup * time
-                                                data_dependencies = curr_workflow['functions'][f"function_{m}"][
+                                                data_dependencies = workflow_config['functions'][f"function_{m}"][
                                                         'data_dependencies']
                                                 for key in data_dependencies.keys():
                                                         value = data_dependencies[key]
                                                         pricing_Storage_Transfer = provider_cost_list[key][
                                                                 "pricing_Storage_Transfer"]
-                                                        if key != curr_cloud["providers"][f"provider_{selected_place}"][
+                                                        if key != cloud_config["providers"][f"provider_{selected_place}"][
                                                                 "name"]:
                                                                 #        D[j,k]=data_send
                                                                 C_func[m] = C_func[m] + pricing_Storage_Transfer * value
@@ -404,6 +407,7 @@ if __name__ == "__main__":
                                                 #k_curr = get_leaf(selected_place, opt_num)
                                                 T_paths[s] += (T_func+L_func[m])
                                                 pred_k=selected_place
+                                                invocations[selected_place]+=1
 
                                         T_paths[s]+=L[selected_place][k+num_other]
 
@@ -430,6 +434,7 @@ if __name__ == "__main__":
                                 time_cost_all += time_cost
                                 money_cost_all += money_cost
                         select_cost_all += select_cost
+                        select_cost_all+=np.sum(invocations**2)
                 overall_cost = w_1 * money_cost_all+w_2 * time_cost_all+w_3*select_cost_all
                 print(overall_cost)
                 results['overall_cost_comparison'] = overall_cost[0]
