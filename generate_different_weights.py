@@ -12,16 +12,20 @@ if __name__ == "__main__":
             w3 = (1 - w1 - w2)
             weights.append([w1, w2, w3])
 
-    num_weights=10
+    num_weights_util=11
+    num_weights=11
     with open(parameter_config_path, "r") as f:
         parameter_general_config = json.load(f)
-    w_1=np.linspace(0,1,num_weights)
-    for k in range(len(weights)):
-        parameter_general_config["w_1"]=weights[k][0]#w_1[k]#weights[k][0]
-        parameter_general_config["w_2"]=weights[k][1]#1-w_1[k]#w_1[k]#weights[k][1]
-        parameter_general_config["w_3"] = weights[k][2]#0#1-w_1[k]#weights[k][2]
-        parameter_config_path=f"settings/parameters_{k+2}.json"
-        with open(parameter_config_path, "w") as f:
-            json.dump(parameter_general_config, f, indent=4)
+    w_3=np.linspace(0,10,num_weights_util)+0.0001
+    w_1 = np.linspace(0, 1, num_weights)+0.0001
+    w_2 = (1.0001-w_1)+0.0001
+    for k in range(len(w_3)):
+        for m in range(len(w_2)):
+            parameter_general_config["w_1"]=w_1[m]
+            parameter_general_config["w_2"]=w_2[m]
+            parameter_general_config["w_3"] = w_3[k]
+            parameter_config_path=f"settings/parameters_{k*num_weights_util+m+2}.json"
+            with open(parameter_config_path, "w") as f:
+                json.dump(parameter_general_config, f, indent=4)
     with open(weights_config_path, "w") as f:
         json.dump(weights, f, indent=4)

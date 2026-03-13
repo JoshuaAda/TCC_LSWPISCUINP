@@ -83,7 +83,7 @@ if __name__ == "__main__":
                     requirements_workflow_config=update_requirements_config(requirements_workflow_config,np.array(solution['P']),np.array(solution['H']),ind,curr_leave_k,requirements_cloud_config["num_nodes"],seed=seed)#P_list[predecessor_list[k][s]]
                     with open(path_workflow, "w") as f:
                         json.dump(requirements_workflow_config, f, indent=4)
-                model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S,t=solve_opt(requirements_workflow_config,requirements_cloud_config,gap=own_gap,w_1=w_1,w_2=w_2,w_3=w_3,provider_name_list=provider_list,provider_cost_list=provider_cost_list)
+                model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S,t,M=solve_opt(requirements_workflow_config,requirements_cloud_config,gap=own_gap,w_1=w_1,w_2=w_2,w_3=w_3,provider_name_list=provider_list,provider_cost_list=provider_cost_list)
                 solution=dict()
                 solution['P']=P.tolist()
                 solution['H']=H.tolist()
@@ -104,7 +104,7 @@ if __name__ == "__main__":
                 num_prob += 1
                 ind+=1
 
-                requirements_cloud_config=update_cloud_config(requirements_cloud_config,requirements_workflow_config,P)
+                requirements_cloud_config=update_cloud_config(requirements_cloud_config,requirements_workflow_config,P,M)
                 with open(path_cloud, "w") as f:
                     json.dump(requirements_cloud_config, f, indent=4)
     t2=time.time()
@@ -126,7 +126,7 @@ if __name__ == "__main__":
             with open(path_workflow, "r") as f:  # requirements_workflow_0.json
                 requirements_workflow_config = json.load(f)
 
-            model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S,t = solve_opt(requirements_workflow_config, requirements_cloud_config,comparison_gap,w_1,w_2,w_3,provider_list,provider_cost_list,heuristic)
+            model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S,t,M = solve_opt(requirements_workflow_config, requirements_cloud_config,comparison_gap,w_1,w_2,w_3,provider_list,provider_cost_list,heuristic)
             solution = dict()
             solution['P'] = P.tolist()
             solution['H'] = H.tolist()
@@ -140,6 +140,9 @@ if __name__ == "__main__":
             solution['b'] = b.tolist()
             solution['Speed'] = Speed.tolist()
             solution['S'] = S.tolist()
+            requirements_cloud_config = update_cloud_config(requirements_cloud_config, requirements_workflow_config, P, M)
+            with open(path_cloud, "w") as f:
+                json.dump(requirements_cloud_config, f, indent=4)
             comparison_time.append(t)
             with open(path_solution, "w") as f:
                 json.dump(solution, f, indent=4)
@@ -154,55 +157,3 @@ if __name__ == "__main__":
     results_path = f"results/run_{num_run}/time.json"
     with open(results_path, "w") as f:
         json.dump(result_dict,f, indent=4)
-        #new_deployment_list=create_deployment_configs(requirements_workflow_config,requirements_cloud_config)
-        #deployment_config=optimizer.deployment
-        #for k,deployment_config in enumerate(new_deployment_list):
-        #    with open(os.path.abspath("deployment_workflow_"+str(k)+".json"), "w") as f:
-        #        json.dump(deployment_config, f,indent=4)
-        #    # create the choreography/pre-fetching code to the functions and deploy them
-        #    deployer.setup.createDeployment(deployment_config, functions_src, functions_dst)
-        #    #deployer.setup.deploy(functions_dst)
-
-        #    # create a workflow bucket that will be used to pass arguments around during the workflows
-        #    s3 = boto3.client(
-        #        aws_access_key_id=deployment_config["credentials"]["aws"]["aws_access_key_id"],
-        #        aws_secret_access_key=deployment_config["credentials"]["aws"]["aws_secret_access_key"],
-        #        service_name="s3"
-        #    )
-        #    deployer.setup.createBucket(s3, deployment_config["workflowBucketName"])
-
-'''
-import json
-import os.path
-
-import boto3
-from optimization import *#optimization
-import deployer.setup
-
-if __name__ == "__main__":
-    # load the deployment configuration
-    with open(os.path.abspath("requirements_cloud_0.json"), "r") as f:
-        requirements_cloud_config = json.load(f)
-    with open(os.path.abspath("requirements_workflow_0.json"), "r") as f:
-        requirements_workflow_config = json.load(f)
-    # directories with function/deployment code
-    functions_src = os.path.abspath("functions")
-    functions_dst = os.path.abspath("deployment")
-    model,P=setup_model(requirements_workflow_config,requirements_cloud_config)
-    new_deployment_list=create_deployment_configs(requirements_workflow_config,requirements_cloud_config,P)
-    #deployment_config=optimizer.deployment
-    for k,deployment_config in enumerate(new_deployment_list):
-        with open(os.path.abspath("deployment_workflow_"+str(k)+".json"), "w") as f:
-            json.dump(deployment_config, f,indent=4)
-        # create the choreography/pre-fetching code to the functions and deploy them
-        deployer.setup.createDeployment(deployment_config, functions_src, functions_dst)
-        #deployer.setup.deploy(functions_dst)
-
-        # create a workflow bucket that will be used to pass arguments around during the workflows
-        s3 = boto3.client(
-            aws_access_key_id=deployment_config["credentials"]["aws"]["aws_access_key_id"],
-            aws_secret_access_key=deployment_config["credentials"]["aws"]["aws_secret_access_key"],
-            service_name="s3"
-        )
-        deployer.setup.createBucket(s3, deployment_config["workflowBucketName"])
-'''
