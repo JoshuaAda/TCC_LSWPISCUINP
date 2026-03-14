@@ -2,14 +2,10 @@ from gurobipy import *
 import numpy as np
 from typing import Any, Dict
 import time
-#def __init__(self,deployment_cloud: Dict[str, Any],deployment_workflow: Dict[str, Any]):
-
-    #model_list=[ setup_model(0)] #for s in range( num_nodes_tiny+1)]
-
 
 
 def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, Any], gap=0,w_1=1,w_2=1,w_3=1,provider_name_list=[],provider_cost_list=[],heuristic=False):
-    #deployment = deployment_cloud
+
     workflow_functions = list(deployment_workflow['functions'].keys())
     providers = list(deployment_cloud['providers'].keys())
     num_paths = deployment_workflow['paths']['num_paths']
@@ -23,11 +19,8 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
             num_nodes_cloud += 1
         else:
             num_nodes_tiny += 1
-    # num_nodes_cloud = len(deployment_cloud['providers']) - 1
-
-    # num_nodes_tiny = len(deployment_cloud['providers']['tinyFaaS']['nodes'])
     num_nodes = num_nodes_cloud + num_nodes_tiny
-    #num_branches = deployment_workflow['num_branches']
+ 
 
 
     model= Model("FaaS")
@@ -40,6 +33,7 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
     a=np.zeros((num_functions,num_functions))
     Speed=np.ones((num_functions, num_nodes))
     ram_max=np.ones((num_nodes,1))*1e8
+    request=np.zeros((num_nodes,1))
     ram=np.zeros((num_functions,1))
     Time=np.zeros((num_functions,1))
     #prob_request=np.zeros((num_functions,1))
@@ -70,8 +64,10 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
             a[list_func[r],list_func[r+1]]=1
     for i in range(num_nodes):
         if deployment_cloud['providers'][f"provider_{i}"]["name"]=='tinyfaas':
-            ram_max[i]=deployment_cloud['providers'][f"provider_{i}"]['max_RAM_curr']
 
+            ram_max[i]=deployment_cloud['providers'][f"provider_{i}"]['max_RAM_curr']
+    for k in range(num_leaves):
+        request[k]=deployment_cloud['providers'][f"provider_{leave_nodes[k]}"]["request_rate"]
     for j in range( num_functions):
         ram[j] =  deployment_workflow['functions'][ workflow_functions[j]]['ram']
         Time[j] =  deployment_workflow['functions'][ workflow_functions[j]]['time']
@@ -138,6 +134,8 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
         S = np.zeros((num_functions * num_workflows, num_nodes))
         H = np.zeros((num_leaves, num_workflows))
         T = np.zeros((num_workflows, 1))
+        M=np.zeros((num_nodes,1))
+        p = np.zeros((num_workflows,num_functions))
 
         for l in range(len(P)):
             P[l,0]=1
@@ -152,13 +150,14 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
         H=model.addVars(num_leaves,num_workflows,vtype=GRB.BINARY, name="H")
         T=model.addVars(num_workflows,lb=0, ub=float('inf'),vtype=GRB.CONTINUOUS, name="T")
         M = model.addVars(num_nodes, vtype=GRB.CONTINUOUS, name="M")
+        p = model.addVars(num_functions*num_workflows,vtype=GRB.CONTINUOUS,name="p")
         obj=0
         for n in range( num_workflows):
             for k in range( num_leaves):
-                obj=obj+H[k,n]*w_2*T[n]
+                obj=obj+request[k][0]*H[k,n]*w_2*T[n]
                 for m in range( num_functions):
                     for i in range(num_nodes):
-                        obj=obj+H[k,n]*(w_1*(P[m+n* num_functions,i]*C[m,i]+S[m+n* num_functions,i]))#S[m+n* num_functions,i]*D[m,i]
+                        obj=obj+request[k][0]*H[k,n]*(w_1*(P[m+n* num_functions,i]*C[m,i]+S[m+n* num_functions,i]))#S[m+n* num_functions,i]*D[m,i]
                         #for m_s in range(num_functions):
                             #for j in range(num_nodes):
                                 #obj=obj+H[k,n]*P[m+n*num_functions,i]*P[m_s+n*num_functions,j]*D[m,i]*a[m,m_s]
@@ -172,26 +171,31 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
             for k in range( num_leaves):
                 for i in range(num_nodes):
                     for m in m_start:
-                        obj=obj+H[k,n]*( P[n*num_functions+m,i]*w_1*D_in[i]+w_2*L[leave_nodes[k],i]*P[n*num_functions+m,i])# P[n*num_functions+m,i]*w_1*D_in[i]
+                        obj=obj+request[k][0]*H[k,n]*( P[n*num_functions+m,i]*w_1*D_in[i]+w_2*L[leave_nodes[k],i]*P[n*num_functions+m,i])# P[n*num_functions+m,i]*w_1*D_in[i]
                     for m in m_end:
-                        obj= obj+H[k,n]*(w_1*D[m,i,k]*P[n*num_functions+m, i]+w_2*L[leave_nodes[k], i] * P[n*num_functions+m, i])
+                        obj= obj+request[k][0]*H[k,n]*(w_1*D[m,i,k]*P[n*num_functions+m, i]+w_2*L[leave_nodes[k], i] * P[n*num_functions+m, i])
 
 
-
+        for n in range(num_workflows):
+            for m in range(num_functions):
+                model.addConstr(p[n*num_functions+m]==quicksum(quicksum(request[k][0]*H[k,n]*P[n*num_functions,i]*Time[m]*Speed[m][i] for k in range(num_leaves)) for i in range(num_nodes)))
+                obj+=w_3*p[n*num_functions+m]**2
         for i in range(num_nodes):
+            curr_util=deployment_cloud["providers"][f"provider_{i}"]["utilization"]
+
             if i ==0:
-                model.addConstr(M[i] == (quicksum(quicksum(H[k,n]*(quicksum(P[n * num_functions + m, i] for m in range(num_functions))-sum([already_placed[n,m] for m in range(num_functions)])) for k in range(num_leaves)) for n in range(num_workflows))),
+                model.addConstr(M[i] == (quicksum(quicksum(request[k][0]*H[k,n]*(quicksum(P[n * num_functions + m, i]*Time[m]*ram[m] for m in range(num_functions))-sum([already_placed[n,m]*Time[m]*ram[m] for m in range(num_functions)])) for k in range(num_leaves)) for n in range(num_workflows)))/ram_max[i]+curr_util,
                                 "Aux cons")
             else:
                 model.addConstr(M[i] == (quicksum(quicksum(
-                    quicksum(H[k, n] * P[n * num_functions + m, i] for m in range(num_functions)) for k in
-                    range(num_leaves)) for n in range(num_workflows))),
+                    quicksum(request[k][0]*H[k, n] * P[n * num_functions + m, i]*Time[m]*ram[m] for m in range(num_functions)) for k in
+                    range(num_leaves)) for n in range(num_workflows)))/ram_max[i]+curr_util,
                                 "Aux cons")
             obj+=w_3*M[i]**2#quicksum(H[r,n]*M[i,n] for r in range(num_leaves))
         #for k in range(num_nodes):
         #    obj+=w_3*quicksum(quicksum(P[n*num_functions+m,k] for m in range(num_functions)) for n in range(num_workflows))**2
-        for n in range(num_workflows):
-            obj+=w_3*quicksum(H[k,n] for k in range(num_leaves))**2
+        #for n in range(num_workflows):
+        #    obj+=w_3*quicksum(H[k,n] for k in range(num_leaves))**2
         model.setObjective(obj,GRB.MINIMIZE)
         #T_path=np.zeros((num_workflows,num_paths))
         for n in range( num_workflows):
@@ -233,145 +237,69 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
         P_list = []
         # for model in  model_list:
         t1=time.time()
-        model.optimize()
-        t2=time.time()
-        t=t2-t1
-        P = np.zeros((num_functions * num_workflows, num_nodes))
-        S = np.zeros((num_functions * num_workflows, num_nodes))
-        H = np.zeros((num_leaves, num_workflows))
-        T = np.zeros((num_workflows, 1))
-        M=  np.zeros((num_nodes,1))
-        r = 0
-        s = 0
-        for index,v in enumerate(model.getVars()):
-            if index<num_functions*num_workflows*num_nodes:
-                P[s, r] = v.x
-                r = r + 1
-                if r == num_nodes:
-                    s = s + 1
-                    r = 0
-                if s == num_functions*num_workflows:
-                    s=0
+        try:
+            model.optimize()
 
-            elif index<2*num_functions*num_workflows*num_nodes:
-                S[s, r] = v.x
-                r = r + 1
-                if r == num_nodes:
+            t2=time.time()
+            t=t2-t1
+            P = np.zeros((num_functions * num_workflows, num_nodes))
+            S = np.zeros((num_functions * num_workflows, num_nodes))
+            H = np.zeros((num_leaves, num_workflows))
+            T = np.zeros((num_workflows, 1))
+            M=  np.zeros((num_nodes,1))
+            p= np.zeros((num_workflows*num_functions,1))
+            r = 0
+            s = 0
+            for index,v in enumerate(model.getVars()):
+                if index<num_functions*num_workflows*num_nodes:
+                    P[s, r] = round(v.x)
+                    r = r + 1
+                    if r == num_nodes:
+                        s = s + 1
+                        r = 0
+                    if s == num_functions*num_workflows:
+                        s=0
+
+                elif index<2*num_functions*num_workflows*num_nodes:
+                    S[s, r] = v.x
+                    r = r + 1
+                    if r == num_nodes:
+                        s = s + 1
+                        r = 0
+                    if s == num_functions*num_workflows:
+                        s=0
+                elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows:
+                    H[s, r] = round(v.x)
+                    r = r + 1
+                    if r == num_workflows:
+                        s = s + 1
+                        r = 0
+                    if s == num_leaves:
+                        s=0
+                elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows+num_workflows:
+                    T[s] = v.x
                     s = s + 1
-                    r = 0
-                if s == num_functions*num_workflows:
-                    s=0
-            elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows:
-                H[s, r] = v.x
-                r = r + 1
-                if r == num_workflows:
-                    s = s + 1
-                    r = 0
-                if s == num_leaves:
-                    s=0
-            elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows+num_workflows:
-                T[s] = v.x
-                s = s + 1
-                if s==num_workflows:
-                    s=0
-            #else:
-            #    M[s] =v.x
-            #    s=s+1
-        obj=model.getObjective()
+                    if s==num_workflows:
+                        s=0
+                elif index<2*num_functions*num_workflows*num_nodes+num_leaves*num_workflows+num_workflows+num_nodes:
+                    M[s] =v.x
+                    s=s+1
+                    if s==num_nodes:
+                        s=0
+                else:
+                    p[s]=v.x
+                    s=s+1
+            obj=model.getObjective()
+        except:
+            pass
     P_list.append(P)
     #print(obj)
     print(P)
-    #print(T)
+
     print(H)
-    #print(M)
-    #print(D_in)
-    #print(S)
-    return model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S,t
+    print(M)
+    print(p)
+    return model,P,H,L,T,C,D,D_in,Time,a,b,Speed,S,t,M
 
-"""
-def deploy_to_cloud(deployment_cloud: Dict[str, Any],deployment_workflow: Dict[str, Any],new_deployment,function_number: int,node_number: int):
-    workflow_functions = list(deployment_workflow['functions'].keys())
-    providers = list(deployment_cloud['providers'].keys())
-    num_functions = len(deployment_workflow['functions'])
-    num_nodes_cloud = len(deployment_cloud['providers']) - 1
-    num_nodes_tiny = len(deployment_workflow['providers']['tinyFaaS']['nodes'])
-    num_nodes = num_nodes_cloud + num_nodes_tiny
-    num_configs = 2
-    old_deploy = deployment_workflow['functions'].copy()
-    func_key= workflow_functions[function_number]
-    old_values = old_deploy[func_key]
-    if node_number== num_nodes_tiny:
-        #old_deploy= deployment['functions'][func_key]
-       deploy={
-        "handler": "wrapper_aws.wrapper_aws",
-        "requirements": "./functions/"+func_key+"/requirements.txt",
-        "provider": "AWS",
-        "method": "POST",
-        "region": "us-east-1",
-        "time": old_values["time"],
-        "ram": old_values["ram"],
-        "requests": old_values["requests"]
-        },
-    elif node_number== num_nodes_tiny+1:
-        #old_deploy =  deployment['functions'][func_key]
-        deploy={
-        "handler": "wrapper_gcp.wrapper_gcp",
-        "requirements": "./functions/"+func_key+"/requirements.txt",
-        "provider": "google",
-        "method": "POST",
-        "region": "us-central1",
-        "time": old_values["time"],
-        "ram": old_values["ram"],
-        "requests": old_values["requests"]
-        }
-    else:
-        assert node_number> num_nodes_tiny+1
 
-    new_deployment['functions'][func_key]=deploy
-    return new_deployment
-def deploy_to_tinyfaas(new_deployment,old_deploy,function_number: int,node_number: int):
-    workflow_functions = list(new_deployment['functions'].keys())
-    func_key= workflow_functions[function_number]
-    #old_deploy= deployment['functions'][func_key]
-    old_values=  old_deploy[func_key]
-    deploy={
-        "handler": "???",
-        "requirements": "???",
-        "provider": "tinyFaaS",
-        "tinyFaaSOptions": {
-            "env": "python3",
-            "threads": 1,
-            "source": "???",
-            "deployTo": [
-                {
-                    "name": "tf-node-"+str(node_number)
-                }
-            ]
-        },
-        "time": old_values["time"],
-        "ram": old_values["ram"],
-        "requests": old_values["requests"]
-    }
-    new_deployment['functions'][func_key]=deploy
-
-def create_deployment_configs(deployment_workflow,deployment_cloud,P):
-    new_deployment_list=[]
-    workflow_functions = list(deployment_workflow['functions'].keys())
-    providers = list(deployment_cloud['providers'].keys())
-    num_functions = len(deployment_workflow['functions'])
-    num_nodes_cloud = len(deployment_cloud['providers']) - 1
-    num_nodes_tiny = len(deployment_cloud['providers']['tinyfaas']['nodes'])
-    num_nodes = num_nodes_cloud + num_nodes_tiny
-    num_configs = 2
-    for m in range( num_configs):
-        new_deployment= deployment_workflow.copy()
-        for j in range( num_functions):
-            for k in range( num_nodes):
-                if k< num_nodes_tiny and P[j,k]==1:
-                    new_deployment= deploy_to_tinyfaas(new_deployment,j,k)
-                elif P[j,k]==1:
-                    new_deployment= deploy_to_cloud(new_deployment,j,k)
-        new_deployment_list.append(new_deployment)
-    return new_deployment_list
-"""
 
