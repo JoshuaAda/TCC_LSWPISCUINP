@@ -1,5 +1,5 @@
 # Large-scale workflow placement in serverless computing using integer nonlinear programming
-Under revision for Transaction on Cloud Computing
+Under revision for IEEE Access
 ## How to use/Evaluate the results
 
 a) Install the necessary dependencies:
