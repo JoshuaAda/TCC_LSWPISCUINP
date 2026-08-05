@@ -173,12 +173,12 @@ def solve_opt(deployment_workflow: Dict[str, Any],deployment_cloud: Dict[str, An
                     for m in m_start:
                         obj=obj+request[k][0]*H[k,n]*( P[n*num_functions+m,i]*w_1*D_in[i]+w_2*L[leave_nodes[k],i]*P[n*num_functions+m,i])# P[n*num_functions+m,i]*w_1*D_in[i]
                     for m in m_end:
-                        obj= obj+request[k][0]*H[k,n]*(w_1*D[m,i,k]*P[n*num_functions+m, i]+w_2*L[leave_nodes[k], i] * P[n*num_functions+m, i])
+                        obj= obj+request[k][0]*H[k,n]*(w_1*D[m,i,leave_nodes[k]]*P[n*num_functions+m, i]+w_2*L[leave_nodes[k], i] * P[n*num_functions+m, i])
 
 
         for n in range(num_workflows):
             for m in range(num_functions):
-                model.addConstr(p[n*num_functions+m]==quicksum(quicksum(request[k][0]*H[k,n]*P[n*num_functions,i]*Time[m]*Speed[m][i] for k in range(num_leaves)) for i in range(num_nodes)))
+                model.addConstr(p[n*num_functions+m]==quicksum(quicksum(request[k][0]*H[k,n]*P[n*num_functions+m,i]*Time[m]*Speed[m][i] for k in range(num_leaves)) for i in range(num_nodes)))
                 obj+=w_3*p[n*num_functions+m]**2
         for i in range(num_nodes):
             curr_util=deployment_cloud["providers"][f"provider_{i}"]["utilization"]
